@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: ledgerops-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ledgerops
+      POSTGRES_USER: ledgerops
+      POSTGRES_PASSWORD: ledgerops_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ledgerops -d ledgerops"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
