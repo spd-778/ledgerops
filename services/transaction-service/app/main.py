@@ -3,6 +3,8 @@ from uuid import uuid4
 import os
 import requests
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.exc import IntegrityError
@@ -12,12 +14,17 @@ from app.database import SessionLocal, engine
 from app.models import Account, AuditEvent, Base, Transaction
 
 
-Base.metadata.create_all(bind=engine)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    yield
 
 
 app = FastAPI(
     title="LedgerOps Transaction Service",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 FRAUD_SERVICE_URL = os.getenv(
