@@ -1,6 +1,6 @@
 # LedgerOps
 
-## Secure Banking Transaction Pipeline — DevOps / SRE Portfolio Project
+## Secure Banking Transaction Pipeline — DevOps / SRE Project
 
 LedgerOps is a production-style financial transaction platform designed to demonstrate practical **DevOps, SRE, cloud, Kubernetes, CI/CD, security, observability, and financial transaction-processing concepts**.
 
