@@ -5,7 +5,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://ledgerops:ledgerops_dev_password@localhost:5432/ledgerops",
+    "postgresql+psycopg2://ledgerops:ledgerops_dev_password@localhost:5432/ledgerops",
 )
 
 engine = create_engine(DATABASE_URL)

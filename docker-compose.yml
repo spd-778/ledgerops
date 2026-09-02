@@ -4,18 +4,80 @@ services:
     container_name: ledgerops-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ledgerops
-      POSTGRES_USER: ledgerops
-      POSTGRES_PASSWORD: ledgerops_dev_password
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ledgerops_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ledgerops -d ledgerops"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+    security_opt:
+      - no-new-privileges:true
+
+  account-service:
+    build:
+      context: ./services/account-service
+    container_name: ledgerops-account-service
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8001:8001"
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+
+  fraud-service:
+    build:
+      context: ./services/fraud-service
+    container_name: ledgerops-fraud-service
+    restart: unless-stopped
+    ports:
+      - "8003:8003"
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+
+  transaction-service:
+    build:
+      context: ./services/transaction-service
+    container_name: ledgerops-transaction-service
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      FRAUD_SERVICE_URL: http://fraud-service:8003
+    depends_on:
+      postgres:
+        condition: service_healthy
+      fraud-service:
+        condition: service_healthy
+      account-service:
+        condition: service_started
+    ports:
+      - "8002:8002"
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 512M
 
 volumes:
-  postgres_data:
+  ledgerops_postgres_data:
