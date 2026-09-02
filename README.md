@@ -933,6 +933,11 @@ This project is intended to demonstrate practical experience with:
 - Security
 - Automated testing
 
+
+<img width="1710" height="1026" alt="image" src="https://github.com/user-attachments/assets/ab268816-e7e8-4b11-9aa8-941327f1fde2" />
+
+<img width="1710" height="1026" alt="image" src="https://github.com/user-attachments/assets/f0cc2baf-4bd7-4903-a266-ceea8ada1365" />
+
 ## Project Goal
 
 The ultimate goal of LedgerOps is to evolve from a locally running microservice application into a production-style financial platform with:
