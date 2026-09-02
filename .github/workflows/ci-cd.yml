@@ -1,0 +1,111 @@
+name: LedgerOps CI/CD
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: services/transaction-service
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run pytest
+        run: python -m pytest -v
+
+  build-and-scan:
+    name: Build and Scan Containers
+    runs-on: ubuntu-latest
+    needs: test
+
+    strategy:
+      matrix:
+        include:
+          - service: account-service
+            context: ./services/account-service
+          - service: transaction-service
+            context: ./services/transaction-service
+          - service: fraud-service
+            context: ./services/fraud-service
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t ledgerops-${{ matrix.service }}:${{ github.sha }} \
+            ${{ matrix.context }}
+
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ledgerops-${{ matrix.service }}:${{ github.sha }}
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
+
+  publish:
+    name: Publish Images to GHCR
+    runs-on: ubuntu-latest
+    needs: build-and-scan
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        include:
+          - service: account-service
+            context: ./services/account-service
+          - service: transaction-service
+            context: ./services/transaction-service
+          - service: fraud-service
+            context: ./services/fraud-service
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/ledgerops-${{ matrix.service }}:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/ledgerops-${{ matrix.service }}:latest
