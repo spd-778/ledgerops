@@ -13,13 +13,16 @@ permissions:
   packages: write
 
 jobs:
-  test:
-    name: Run Tests
+  test-transaction:
+    name: Test Transaction Service
     runs-on: ubuntu-latest
 
     defaults:
       run:
         working-directory: services/transaction-service
+
+    env:
+      DATABASE_URL: postgresql+psycopg2://ledgerops:ledgerops_dev_password@localhost:5432/ledgerops
 
     steps:
       - name: Checkout repository
@@ -30,16 +33,41 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      - name: Install test dependencies
+        run: pip install -r requirements-dev.txt
 
-      - name: Run pytest
+      - name: Run tests
+        run: python -m pytest -v
+
+  test-fraud:
+    name: Test Fraud Service
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: services/fraud-service
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run tests
         run: python -m pytest -v
 
   build-and-scan:
     name: Build and Scan Containers
     runs-on: ubuntu-latest
-    needs: test
+    needs:
+      - test-transaction
+      - test-fraud
 
     strategy:
       matrix:
