@@ -1,0 +1,103 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-rules
+  namespace: ledgerops
+data:
+  prometheus-rules.yaml: |
+    groups:
+      - name: ledgerops-sre
+        interval: 30s
+        rules:
+          - record: ledgerops:transaction_request_rate_5m
+            expr: sum(rate(ledgerops_http_requests_total{job="transaction-service"}[5m]))
+
+          - record: ledgerops:transaction_error_rate_5m
+            expr: sum(rate(ledgerops_http_requests_total{job="transaction-service",status=~"5.."}[5m]))
+
+          - record: ledgerops:fraud_rejection_rate_5m
+            expr: sum(rate(ledgerops_fraud_checks_total{job="fraud-service",result="rejected"}[5m]))
+
+          - record: ledgerops:fraud_check_rate_5m
+            expr: sum(rate(ledgerops_fraud_checks_total{job="fraud-service"}[5m]))
+
+          - record: ledgerops:transaction_p95_latency_5m
+            expr: |
+              histogram_quantile(
+                0.95,
+                sum by (le) (
+                  rate(ledgerops_http_request_duration_seconds_bucket{job="transaction-service"}[5m])
+                )
+              )
+
+          - record: ledgerops:transaction_success_ratio_5m
+            expr: |
+              1 -
+              (
+                sum(rate(ledgerops_http_requests_total{job="transaction-service",status=~"5.."}[5m]))
+                /
+                clamp_min(sum(rate(ledgerops_http_requests_total{job="transaction-service"}[5m])), 0.000001)
+              )
+
+          - record: ledgerops:fraud_rejection_ratio_5m
+            expr: |
+              sum(rate(ledgerops_fraud_checks_total{job="fraud-service",result="rejected"}[5m]))
+              /
+              clamp_min(sum(rate(ledgerops_fraud_checks_total{job="fraud-service"}[5m])), 0.000001)
+
+      - name: ledgerops-alerts
+        rules:
+          - alert: LedgerOpsTransactionServiceDown
+            expr: up{job="transaction-service"} == 0
+            for: 2m
+            labels:
+              severity: critical
+              service: transaction-service
+            annotations:
+              summary: "Transaction Service is down"
+              description: "Prometheus cannot scrape the LedgerOps Transaction Service."
+
+          - alert: LedgerOpsFraudServiceDown
+            expr: up{job="fraud-service"} == 0
+            for: 2m
+            labels:
+              severity: critical
+              service: fraud-service
+            annotations:
+              summary: "Fraud Service is down"
+              description: "Prometheus cannot scrape the LedgerOps Fraud Service."
+
+          - alert: LedgerOpsHighTransactionErrorRate
+            expr: |
+              (
+                sum(rate(ledgerops_http_requests_total{job="transaction-service",status=~"5.."}[5m]))
+                /
+                clamp_min(sum(rate(ledgerops_http_requests_total{job="transaction-service"}[5m])), 0.000001)
+              ) > 0.05
+            for: 5m
+            labels:
+              severity: warning
+              service: transaction-service
+            annotations:
+              summary: "High Transaction Service error rate"
+              description: "More than 5% of Transaction Service requests are returning 5xx responses."
+
+          - alert: LedgerOpsHighTransactionLatency
+            expr: ledgerops:transaction_p95_latency_5m > 0.5
+            for: 5m
+            labels:
+              severity: warning
+              service: transaction-service
+            annotations:
+              summary: "High transaction latency"
+              description: "Transaction Service p95 latency is above 500ms."
+
+          - alert: LedgerOpsHighFraudRejectionRate
+            expr: ledgerops:fraud_rejection_ratio_5m > 0.50
+            for: 5m
+            labels:
+              severity: warning
+              service: fraud-service
+            annotations:
+              summary: "High fraud rejection ratio"
+              description: "More than 50% of fraud checks are being rejected."
