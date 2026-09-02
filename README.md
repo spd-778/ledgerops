@@ -1,40 +1,125 @@
 # LedgerOps
 
-LedgerOps is a production-style financial transaction platform designed to demonstrate modern DevOps, SRE, microservices, containerization, CI/CD, database management, monitoring, and cloud deployment practices.
+## Secure Banking Transaction Pipeline — DevOps / SRE Portfolio Project
 
-The project simulates a financial ledger platform with independently deployable services for account and transaction management.
+LedgerOps is a production-style financial transaction platform designed to demonstrate practical **DevOps, SRE, cloud, Kubernetes, CI/CD, security, observability, and financial transaction-processing concepts**.
+
+The platform simulates a banking transaction workflow using independently deployable microservices for:
+
+- Account management
+- Transaction processing
+- Fraud detection
+- Transaction audit history
+- PostgreSQL persistence
+- Kubernetes orchestration
+- Prometheus monitoring
+- Grafana dashboards
+- Automated CI/CD
+- Container security scanning
+- Infrastructure as Code
+
+The project focuses on **reliability, transaction integrity, security, automation, and operational engineering** rather than simply deploying containers.
+
+---
 
 ## Architecture
 
 ```text
-                         Client
-                           |
-                           v
-                    +-------------+
-                    | API Services|
-                    +------+------+
-                           |
-              +------------+------------+
-              |                         |
-              v                         v
-      +---------------+         +---------------+
-      | Account       |         | Transaction   |
-      | Service       |         | Service       |
-      | Port 8001     |         | Port 8002     |
-      +-------+-------+         +-------+-------+
-              |                         |
-              +------------+------------+
-                           |
-                           v
-                    +-------------+
-                    | PostgreSQL  |
-                    | Port 5432   |
-                    +-------------+
+                                  Client
+                                    |
+                                    v
+                         +----------------------+
+                         | Transaction Service  |
+                         |       :8002          |
+                         +----------+-----------+
+                                    |
+                    +---------------+---------------+
+                    |                               |
+                    v                               v
+          +-------------------+            +-------------------+
+          |   Fraud Service   |            |    PostgreSQL     |
+          |       :8003       |            |       :5432       |
+          +-------------------+            +---------+---------+
+                                                    |
+                                          +---------+---------+
+                                          |  Account Service  |
+                                          |       :8001       |
+                                          +-------------------+
+
+                         Observability
+                              |
+                +-------------+-------------+
+                |                           |
+                v                           v
+        +---------------+           +---------------+
+        |  Prometheus   |---------->|    Grafana    |
+        |     :9090     |           |     :3000     |
+        +---------------+           +---------------+
+                |
+                +---- HTTP metrics
+                +---- Transaction metrics
+                +---- Fraud metrics
+                +---- Error rates
+                +---- Latency
+                +---- Availability
+                +---- Alerts
 ```
 
-## Technology Stack
+---
 
-### Application
+## Core Transaction Flow
+
+A financial transaction follows a controlled workflow:
+
+```text
+Client
+  |
+  v
+Transaction Service
+  |
+  +--> Validate request
+  |
+  +--> Check idempotency
+  |
+  +--> Lock source/destination accounts
+  |
+  +--> Fraud Service
+  |
+  +---- REJECTED --> Record fraud rejection audit
+  |
+  +---- APPROVED
+          |
+          v
+      Create PENDING transaction
+          |
+          v
+      Update account balances
+          |
+          v
+      Mark COMPLETED
+          |
+          v
+      Create audit events
+          |
+          v
+      Commit database transaction
+```
+
+The design prioritizes:
+
+- Transaction integrity
+- Atomic balance updates
+- Idempotency
+- Fraud controls
+- Auditability
+- Failure recovery
+- Operational visibility
+
+---
+
+# Technology Stack
+
+## Application
 
 - Python
 - FastAPI
@@ -44,8 +129,9 @@ The project simulates a financial ledger platform with independently deployable 
 - Pydantic
 - Uvicorn
 - Pytest
+- Requests
 
-### DevOps
+## DevOps
 
 - Git
 - GitHub
@@ -53,75 +139,72 @@ The project simulates a financial ledger platform with independently deployable 
 - Docker Compose
 - GitHub Actions
 - GitHub Container Registry (GHCR)
+- Trivy
 
-### Cloud
+## Kubernetes
 
-- Google Cloud Platform (GCP)
-- Containerized services
-- Infrastructure as Code
-- Cloud-based monitoring and logging
+- Kubernetes
+- Docker Desktop Kubernetes
+- Deployments
+- Services
+- ConfigMaps
+- Secrets
+- PersistentVolumeClaims
+- Readiness probes
+- Liveness probes
+- Horizontal Pod Autoscaling
+- PodDisruptionBudgets
+- NetworkPolicies
 
-### SRE
+## Observability
 
-- Health checks
-- SLIs
-- SLOs
-- Error budgets
-- Monitoring
-- Logging
-- Observability
-- Incident management
-- Failure recovery
-- CI/CD automation
+- Prometheus
+- Grafana
+- Prometheus recording rules
+- Prometheus alert rules
+- Application metrics
+- HTTP request metrics
+- Request latency metrics
+- Fraud decision metrics
 
-## Project Structure
+## Cloud / Infrastructure
 
-```text
-ledgerops/
-│
-├── services/
-│   │
-│   ├── account-service/
-│   │   ├── app/
-│   │   │   ├── __init__.py
-│   │   │   ├── database.py
-│   │   │   ├── main.py
-│   │   │   └── models.py
-│   │   │
-│   │   ├── tests/
-│   │   │   ├── __init__.py
-│   │   │   └── test_accounts.py
-│   │   │
-│   │   ├── requirements.txt
-│   │   └── README.md
-│   │
-│   └── transaction-service/
-│       ├── app/
-│       │   ├── __init__.py
-│       │   ├── database.py
-│       │   ├── main.py
-│       │   └── models.py
-│       │
-│       └── requirements.txt
-│
-├── docker-compose.yml
-├── .gitignore
-└── README.md
-```
+- Google Cloud Platform
+- Terraform
+- Google Artifact Registry
+- Google Kubernetes Engine
+- Google IAM
+- Workload Identity Federation
 
-## Services
+---
+
+# Services
 
 | Service | Port | Purpose |
 |---|---:|---|
 | Account Service | 8001 | Account creation, lookup and balance management |
-| Transaction Service | 8002 | Transaction processing and transaction management |
+| Transaction Service | 8002 | Atomic transaction processing |
+| Fraud Service | 8003 | Fraud evaluation and risk decisions |
 | PostgreSQL | 5432 | Persistent relational database |
+| Prometheus | 9090 | Metrics collection and alerting |
+| Grafana | 3000 | SRE dashboards and visualization |
 
-## Account Service
+---
 
-The Account Service manages customer bank accounts and account balances.
+# Account Service
 
-### Health Check
+The Account Service manages customer bank accounts and balances.
+
+## Responsibilities
+
+- Account creation
+- Account lookup
+- Balance retrieval
+- Account status validation
+- Currency validation
+- Persistent account storage
+
+## Health Check
 
 ```http
 GET /health
@@ -136,7 +219,7 @@ Example response:
 }
 ```
 
-### Create Account
+## Create Account
 
 ```http
 POST /accounts
@@ -152,19 +235,7 @@ Example request:
 }
 ```
 
-Example response:
-
-```json
-{
-  "account_id": "ACC-C9E952EE",
-  "customer_id": "CUS-1002",
-  "currency": "CAD",
-  "balance": 7500.0,
-  "status": "ACTIVE"
-}
-```
-
-### Get Account
+## Get Account
 
 ```http
 GET /accounts/{account_id}
@@ -173,10 +244,10 @@ GET /accounts/{account_id}
 Example:
 
 ```bash
-curl http://127.0.0.1:8001/accounts/ACC-C9E952EE
+curl http://127.0.0.1:8001/accounts/ACC-C8E952EE
 ```
 
-### Get Account Balance
+## Get Account Balance
 
 ```http
 GET /accounts/{account_id}/balance
@@ -185,24 +256,28 @@ GET /accounts/{account_id}/balance
 Example:
 
 ```bash
-curl http://127.0.0.1:8001/accounts/ACC-C9E952EE/balance
+curl http://127.0.0.1:8001/accounts/ACC-C8E952EE/balance
 ```
 
-Example response:
+---
 
-```json
-{
-  "account_id": "ACC-C9E952EE",
-  "currency": "CAD",
-  "balance": 7500.0
-}
-```
+# Transaction Service
 
-## Transaction Service
+The Transaction Service is the core financial processing component.
 
-The Transaction Service handles transaction-related operations and stores transaction data in PostgreSQL.
+## Responsibilities
 
-### Transaction Model
+- Transaction validation
+- Account validation
+- Balance validation
+- Atomic transfers
+- Fraud integration
+- Idempotency
+- Transaction persistence
+- Audit trail generation
+- Transaction reversal support
+
+## Transaction Model
 
 | Field | Description |
 |---|---|
@@ -215,66 +290,240 @@ The Transaction Service handles transaction-related operations and stores transa
 | status | Current transaction status |
 | created_at | Transaction creation timestamp |
 
-Supported transaction states are planned as:
+## Transaction States
 
 ```text
 PENDING
 COMPLETED
-FAILED
+REVERSED
 ```
 
-### Health Check
+---
+
+# Atomic Financial Transfers
+
+The Transaction Service uses database transactions and row-level locking to protect financial consistency.
+
+The source and destination accounts are locked before balances are modified.
+
+Conceptually:
+
+```text
+BEGIN DATABASE TRANSACTION
+
+Lock source account
+Lock destination account
+
+Validate:
+    source account
+    destination account
+    account status
+    currency
+    sufficient funds
+    source != destination
+
+Run fraud check
+
+Create transaction
+Update source balance
+Update destination balance
+Mark transaction COMPLETED
+Create audit events
+
+COMMIT
+```
+
+If processing fails, the database transaction is rolled back.
+
+This prevents partial balance updates and protects ledger consistency.
+
+---
+
+# Idempotency
+
+LedgerOps implements idempotency keys to prevent duplicate financial transactions when clients retry requests.
+
+Example:
 
 ```http
-GET /health
+Idempotency-Key: FINAL-TRANSFER-001
 ```
 
-Example response:
+If the same idempotency key is submitted again for the same transaction request, the existing transaction is returned rather than creating a duplicate transfer.
 
-```json
-{
-  "service": "transaction-service",
-  "status": "healthy"
-}
+This protects against duplicate transactions caused by:
+
+- Client retries
+- Network failures
+- Request timeouts
+- Duplicate submissions
+
+Conflicting reuse of an idempotency key is rejected.
+
+---
+
+# Fraud Service
+
+The Fraud Service evaluates transactions before balances are modified.
+
+## Fraud Rules
+
+| Transaction Amount | Decision | Risk Score |
+|---:|---|---:|
+| < $2,000 | APPROVED | 0 |
+| $2,000–$4,999.99 | REVIEW | 40 |
+| $5,000–$9,999.99 | REJECTED | 70 |
+| >= $10,000 | REJECTED | 100 |
+
+Example:
+
+```text
+Transaction Amount: $6,000
+Decision:            REJECTED
+Risk Score:          70
+Reason:              large transaction
 ```
 
-### Transactions Endpoint
+Rejected transactions do not update account balances.
+
+---
+
+# Fraud Validation Example
+
+A rejected transaction can be tested through the Transaction Service.
+
+```bash
+curl -X POST http://127.0.0.1:8002/transactions \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: FINAL-FRAUD-E2E-001" \
+  -d '{
+    "from_account": "ACC-C8E952EE",
+    "to_account": "ACC-8853F2E7",
+    "currency": "CAD",
+    "amount": 6000
+  }'
+```
+
+Expected behavior:
+
+```text
+HTTP 403
+Transaction rejected
+No transaction record created
+Account balances remain unchanged
+Fraud rejection recorded in audit history
+```
+
+This demonstrates that fraud validation occurs before the financial ledger is modified.
+
+---
+
+# Audit Trail
+
+LedgerOps maintains an audit history for transaction processing.
+
+A successful transaction generates events such as:
+
+```text
+TRANSACTION_CREATED
+        |
+        v
+FRAUD_CHECK
+        |
+        v
+TRANSACTION_COMPLETED
+```
+
+Example:
+
+```text
+TRANSACTION_CREATED     | PENDING    | transaction-service
+FRAUD_CHECK             | APPROVED   | fraud-service
+TRANSACTION_COMPLETED   | COMPLETED  | transaction-service
+```
+
+Rejected transactions generate fraud audit events:
+
+```text
+FRAUD_CHECK | REJECTED | fraud-service
+```
+
+The audit history provides traceability for financial operations and incident investigation.
+
+## Audit Endpoint
 
 ```http
-GET /transactions
+GET /audit/transactions/{transaction_id}
 ```
 
-Current response:
+Example:
 
-```json
-{
-  "message": "Transaction service is running"
-}
+```bash
+curl http://127.0.0.1:8002/audit/transactions/TXN-CFA01BF14379
 ```
 
-Transaction processing functionality will be expanded as development continues.
+The endpoint returns:
 
-## Database
+- Transaction existence
+- Transaction status
+- Audit event IDs
+- Event types
+- Event status
+- Actor
+- Reason
+- Timestamp
 
-LedgerOps uses PostgreSQL as the primary relational database.
+---
 
-PostgreSQL currently runs inside Docker using Docker Compose.
+# Transaction Reversal
+
+LedgerOps supports controlled transaction reversal for correction and recovery scenarios.
+
+Example lifecycle:
+
+```text
+PENDING
+   |
+   v
+COMPLETED
+   |
+   v
+REVERSED
+```
+
+The original transaction remains available for traceability.
+
+A reversal is represented as a new state and corresponding audit event rather than silently deleting the original financial record.
+
+---
+
+# PostgreSQL
+
+PostgreSQL is the primary relational database.
 
 ```text
 Database: ledgerops
-User: ledgerops
-Port: 5432
+User:     ledgerops
+Port:     5432
 ```
 
-SQLAlchemy is used as the ORM and Psycopg2 is used as the PostgreSQL driver.
+SQLAlchemy provides ORM functionality and Psycopg2 provides PostgreSQL connectivity.
 
-The database currently contains an `accounts` table for the Account Service and a `transactions` table for the Transaction Service.
+The database contains persistent data for:
 
-PostgreSQL data is persisted using a Docker volume.
+- Accounts
+- Transactions
+- Audit events
 
-## Docker Compose
+PostgreSQL data is persisted using Docker volumes during local development.
 
-PostgreSQL is currently containerized using Docker Compose.
+Database volumes should not be deleted during normal troubleshooting.
+
+---
+
+# Docker Compose
+
+Docker Compose is used for local PostgreSQL development.
 
 Start PostgreSQL:
 
@@ -294,15 +543,17 @@ Expected container:
 ledgerops-postgres
 ```
 
-Stop the database:
+Stop the application stack:
 
 ```bash
 docker compose down
 ```
 
-## Environment Configuration
+---
 
-The services use the `DATABASE_URL` environment variable for database configuration.
+# Environment Configuration
+
+The services use environment variables for runtime configuration.
 
 Example:
 
@@ -310,42 +561,34 @@ Example:
 export DATABASE_URL="postgresql+psycopg2://ledgerops:ledgerops_dev_password@localhost:5432/ledgerops"
 ```
 
-The application reads the configuration using an environment variable rather than hard-coding the production configuration.
+Transaction Service also uses:
 
-Example:
-
-```python
-import os
-
-DATABASE_URL = os.getenv("DATABASE_URL")
+```bash
+export FRAUD_SERVICE_URL="http://127.0.0.1:8003"
 ```
 
-This allows the same application code to be used across development, testing, and production environments.
+Configuration is externalized so application code can be promoted across development, testing, Kubernetes, and cloud environments without hard-coding environment-specific values.
 
 Sensitive credentials should never be committed to Git.
 
-## Local Development
+---
 
-### Clone Repository
+# Local Development
+
+## Clone Repository
 
 ```bash
 git clone https://github.com/spd-778/ledgerops.git
 cd ledgerops
 ```
 
-### Start PostgreSQL
+## Start PostgreSQL
 
 ```bash
 docker compose up -d postgres
 ```
 
-Verify:
-
-```bash
-docker ps
-```
-
-### Run Account Service
+## Run Account Service
 
 ```bash
 cd services/account-service
@@ -368,7 +611,31 @@ Swagger documentation:
 http://127.0.0.1:8001/docs
 ```
 
-### Run Transaction Service
+## Run Fraud Service
+
+Open another terminal:
+
+```bash
+cd services/fraud-service
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8003
+```
+
+Fraud Service:
+
+```text
+http://127.0.0.1:8003
+```
+
+Swagger documentation:
+
+```text
+http://127.0.0.1:8003/docs
+```
+
+## Run Transaction Service
 
 Open another terminal:
 
@@ -378,6 +645,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 export DATABASE_URL="postgresql+psycopg2://ledgerops:ledgerops_dev_password@localhost:5432/ledgerops"
+export FRAUD_SERVICE_URL="http://127.0.0.1:8003"
 uvicorn app.main:app --reload --port 8002
 ```
 
@@ -393,9 +661,11 @@ Swagger documentation:
 http://127.0.0.1:8002/docs
 ```
 
-## API Testing
+---
 
-### Account Service Health
+# API Testing
+
+## Account Health
 
 ```bash
 curl http://127.0.0.1:8001/health
@@ -410,31 +680,7 @@ Expected:
 }
 ```
 
-### Create Account
-
-```bash
-curl -X POST http://127.0.0.1:8001/accounts \
-  -H "Content-Type: application/json" \
-  -d '{
-    "customer_id": "CUS-1002",
-    "currency": "CAD",
-    "initial_balance": 7500
-  }'
-```
-
-### Get Account
-
-```bash
-curl http://127.0.0.1:8001/accounts/{account_id}
-```
-
-### Get Balance
-
-```bash
-curl http://127.0.0.1:8001/accounts/{account_id}/balance
-```
-
-### Transaction Service Health
+## Transaction Health
 
 ```bash
 curl http://127.0.0.1:8002/health
@@ -449,49 +695,102 @@ Expected:
 }
 ```
 
-### Transactions
+## Fraud Health
 
 ```bash
-curl http://127.0.0.1:8002/transactions
+curl http://127.0.0.1:8003/health
 ```
 
 Expected:
 
 ```json
 {
-  "message": "Transaction service is running"
+  "service": "fraud-service",
+  "status": "healthy"
 }
 ```
 
-## Testing
-
-Pytest is used for automated testing.
-
-Run tests:
+## Create Account
 
 ```bash
-pytest
+curl -X POST http://127.0.0.1:8001/accounts \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer_id": "CUS-1002",
+    "currency": "CAD",
+    "initial_balance": 7500
+  }'
 ```
 
-Testing will cover:
+## Get Account
 
-- API health checks
+```bash
+curl http://127.0.0.1:8001/accounts/{account_id}
+```
+
+## Get Balance
+
+```bash
+curl http://127.0.0.1:8001/accounts/{account_id}/balance
+```
+
+## Create Transaction
+
+```bash
+curl -X POST http://127.0.0.1:8002/transactions \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: DEMO-TRANSFER-001" \
+  -d '{
+    "from_account": "ACC-C8E952EE",
+    "to_account": "ACC-8853F2E7",
+    "currency": "CAD",
+    "amount": 100
+  }'
+```
+
+## Get Transaction Audit
+
+```bash
+curl http://127.0.0.1:8002/audit/transactions/{transaction_id}
+```
+
+---
+
+# Testing
+
+Pytest is used for automated application testing.
+
+Testing covers:
+
+- API behavior
+- Health endpoints
 - Account creation
 - Account retrieval
 - Balance retrieval
-- Transaction creation
 - Transaction validation
+- Transaction creation
+- Fraud decisions
+- Fraud rejection
 - Database operations
 - Error handling
 - Failure scenarios
 
-The goal is to execute automated tests as part of the CI/CD pipeline.
+Recent verified test results:
 
-## CI/CD Pipeline
+```text
+Transaction Service: 5 passed
+Fraud Service:       4 passed
+```
 
-LedgerOps is designed around an automated CI/CD workflow using GitHub Actions.
+The test suites are also executed automatically through GitHub Actions CI.
 
-The target pipeline is:
+---
+
+# CI/CD Pipeline
+
+LedgerOps uses GitHub Actions for automated CI/CD.
+
+The current pipeline performs:
 
 ```text
 Developer
@@ -503,170 +802,372 @@ GitHub Repository
     v
 GitHub Actions
     |
-    +-- Checkout Code
+    +-- Checkout source
     |
-    +-- Install Dependencies
+    +-- Install dependencies
     |
-    +-- Run Tests
+    +-- Run Transaction Service tests
     |
-    +-- Lint / Validate
+    +-- Run Fraud Service tests
     |
-    +-- Build Docker Images
+    +-- Build Account Service image
     |
-    +-- Security Scan
+    +-- Build Transaction Service image
     |
-    +-- Push Images to GHCR
+    +-- Build Fraud Service image
     |
-    +-- Deploy to GCP
+    +-- Trivy vulnerability scanning
     |
-    +-- Health Check
+    +-- Tag container images
     |
-    +-- Verify Deployment
+    +-- Publish images to GHCR
+    |
+    v
+GitHub Container Registry
 ```
 
-Planned CI/CD capabilities:
+The CI/CD workflow has been successfully executed with all test, build, scan, and publishing jobs passing.
 
-- Automated testing
-- Docker image builds
-- Docker image tagging
-- GitHub Container Registry
-- Security scanning
-- Deployment automation
-- Deployment verification
-- Health checks
-- Rollback strategy
+---
 
-## GitHub Container Registry
+# GitHub Container Registry
 
-Docker images will be published to GitHub Container Registry.
+Container images are published to GitHub Container Registry.
 
-Planned Account Service image:
+Images:
 
 ```text
 ghcr.io/spd-778/ledgerops-account-service
-```
-
-Planned Transaction Service image:
-
-```text
 ghcr.io/spd-778/ledgerops-transaction-service
+ghcr.io/spd-778/ledgerops-fraud-service
 ```
 
-Example image tags:
+Images use both mutable and immutable tags.
+
+Example:
 
 ```text
 latest
-v1.0.0
-sha-abc123
+sha-<commit>
 ```
 
-## Google Cloud Deployment
+The Git SHA tag provides an immutable reference to the exact source revision used to build an image.
 
-The target production environment is Google Cloud Platform.
+This improves:
 
-Planned deployment architecture:
+- Deployment traceability
+- Release reproducibility
+- Rollback capability
+- Version control
+
+---
+
+# Container Security
+
+Trivy is integrated into the GitHub Actions pipeline.
+
+The container images are scanned for known vulnerabilities before publishing.
+
+The security gate checks for:
 
 ```text
-                         GitHub
-                            |
-                            v
-                    GitHub Actions
-                            |
-                            v
-                          GHCR
-                            |
-                            v
-                     Google Cloud
-                            |
-             +--------------+--------------+
-             |                             |
-             v                             v
-      Account Service              Transaction Service
-             |                             |
-             +--------------+--------------+
-                            |
-                            v
-                       PostgreSQL
-                            |
-                            v
-                  Monitoring / Logging
+CRITICAL
+HIGH
 ```
 
-Planned cloud capabilities include:
+with unfixed vulnerabilities ignored.
 
-- Containerized application deployment
-- Cloud networking
-- IAM
-- Secret management
-- Monitoring
-- Logging
-- Health checks
-- Autoscaling
-- Infrastructure as Code
+This provides an automated container-security control within the CI/CD lifecycle.
 
-## SRE & Observability
+---
 
-LedgerOps follows an SRE-oriented approach to reliability.
+# Kubernetes
 
-The reliability strategy focuses on:
+LedgerOps is deployed to Kubernetes using declarative manifests.
+
+Local environment:
 
 ```text
-Reliability
-    |
-    +-- Availability
-    +-- Latency
-    +-- Error Rate
-    +-- Throughput
-    +-- Resource Utilization
-
-Observability
-    |
-    +-- Logs
-    +-- Metrics
-    +-- Traces
-
-SRE
-    |
-    +-- SLIs
-    +-- SLOs
-    +-- Error Budgets
-    +-- Alerts
-    +-- Incident Response
-    +-- Postmortems
+Docker Desktop Kubernetes
 ```
 
-## SLI / SLO Strategy
-
-### Availability
-
-The availability SLI measures the percentage of successful API requests.
+Namespace:
 
 ```text
-SLI = Successful Requests / Total Requests
+ledgerops
 ```
 
-Example target:
+Application deployments:
+
+```text
+account-service
+transaction-service
+fraud-service
+postgres
+prometheus
+grafana
+```
+
+---
+
+# Kubernetes Workload Configuration
+
+Application replicas:
+
+```text
+Account Service       2
+Transaction Service   2
+Fraud Service         2
+```
+
+Each service is exposed internally through Kubernetes ClusterIP Services.
+
+Kubernetes configuration includes:
+
+- Deployments
+- Services
+- ConfigMaps
+- Secrets
+- Persistent storage
+- Readiness probes
+- Liveness probes
+- Resource configuration
+- Horizontal Pod Autoscaling
+- PodDisruptionBudgets
+- NetworkPolicies
+
+---
+
+# Kubernetes Self-Healing
+
+LedgerOps includes an actual Kubernetes failure-recovery test.
+
+A Transaction Service pod was intentionally deleted during testing.
+
+Before failure:
+
+```text
+transaction-service replicas: 2/2
+```
+
+One pod was deleted.
+
+Kubernetes automatically created a replacement pod.
+
+Example:
+
+```text
+Deleted:
+transaction-service-69d756bcf9-9zqzt
+
+Replacement:
+transaction-service-69d756bcf9-s8bbj
+```
+
+Final state:
+
+```text
+Transaction Service: 2/2
+Health endpoint:     HTTP 200
+Prometheus target:   UP
+```
+
+This demonstrates Kubernetes Deployment-based self-healing.
+
+---
+
+# PodDisruptionBudgets
+
+PodDisruptionBudgets are configured for:
+
+```text
+account-service
+transaction-service
+fraud-service
+```
+
+Configuration:
+
+```text
+minAvailable: 1
+```
+
+This protects availability during supported voluntary disruption scenarios.
+
+---
+
+# Horizontal Pod Autoscaling
+
+HPA is configured for:
+
+```text
+transaction-service
+fraud-service
+```
+
+Configuration:
+
+```text
+Minimum replicas: 2
+Maximum replicas: 5
+CPU target:       70%
+```
+
+The HPA resources are successfully configured.
+
+The local Docker Desktop Kubernetes environment did not provide an available metrics-server, so CPU utilization appeared as:
+
+```text
+<unknown>/70%
+```
+
+Therefore, actual CPU-driven autoscaling was not claimed as a locally demonstrated test.
+
+---
+
+# NetworkPolicies
+
+LedgerOps uses Kubernetes NetworkPolicies to restrict unnecessary service-to-service communication.
+
+Transaction Service can communicate with:
+
+```text
+PostgreSQL
+Fraud Service
+DNS
+Prometheus
+```
+
+Fraud Service accepts traffic from:
+
+```text
+Transaction Service
+Prometheus
+```
+
+Account Service accepts required application and monitoring traffic.
+
+PostgreSQL accepts database traffic from the required application workload.
+
+This provides a basic zero-trust-style east-west network control within the Kubernetes cluster.
+
+---
+
+# Prometheus
+
+Prometheus collects application metrics from the LedgerOps services.
+
+Current metrics include:
+
+```text
+ledgerops_http_requests_total
+ledgerops_http_request_duration_seconds
+ledgerops_fraud_checks_total
+```
+
+Prometheus records operational indicators including:
+
+- Transaction request rate
+- Transaction error rate
+- Fraud rejection rate
+- Fraud check rate
+- Transaction p95 latency
+- Transaction success ratio
+- Fraud rejection ratio
+
+Verified Prometheus targets:
+
+```text
+transaction-service => UP
+fraud-service        => UP
+prometheus           => UP
+```
+
+---
+
+# Grafana
+
+Grafana provides the LedgerOps SRE dashboard.
+
+Dashboard:
+
+```text
+LedgerOps SRE Dashboard
+```
+
+Dashboard panels include:
+
+- Transaction request rate
+- Transaction success ratio
+- Transaction error rate
+- Transaction p95 latency
+- Fraud check rate
+- Fraud rejection ratio
+- Service availability
+- Active alerts
+
+Grafana is automatically configured with Prometheus as its datasource.
+
+Grafana health was successfully verified.
+
+---
+
+# SRE Alerting
+
+Prometheus alert rules are configured for:
+
+```text
+Transaction Service Down
+Fraud Service Down
+High Transaction Error Rate
+High Transaction Latency
+High Fraud Rejection Rate
+```
+
+Recording rules calculate operational indicators including:
+
+```text
+Transaction request rate
+Transaction error rate
+Fraud rejection rate
+Fraud check rate
+Transaction p95 latency
+Transaction success ratio
+Fraud rejection ratio
+```
+
+---
+
+# SLI / SLO Strategy
+
+LedgerOps follows an SRE-oriented reliability model.
+
+## Availability SLI
+
+```text
+Successful Requests / Total Requests
+```
+
+Target:
 
 ```text
 99.9% availability
 ```
 
-### Latency
+## Latency SLI
 
-The latency SLI measures how quickly API requests are completed.
+Transaction API latency is monitored using Prometheus histograms.
 
 Example objective:
 
 ```text
-99% of API requests complete within 500ms
+99% of requests complete within 500ms
 ```
 
-### Error Rate
-
-The error rate measures the percentage of failed API requests.
+## Error Rate SLI
 
 ```text
-Error Rate = Failed Requests / Total Requests
+Failed Requests / Total Requests
 ```
 
 Example objective:
@@ -675,38 +1176,48 @@ Example objective:
 Error Rate < 1%
 ```
 
-## Monitoring Roadmap
+---
 
-Planned monitoring capabilities:
+# Error Budget
 
-- [ ] Prometheus metrics
-- [ ] Grafana dashboards
-- [ ] API latency monitoring
-- [ ] Request rate monitoring
-- [ ] Error-rate monitoring
-- [ ] Database health monitoring
-- [ ] Container health monitoring
-- [ ] CPU monitoring
-- [ ] Memory monitoring
-- [ ] Alerting
-- [ ] Centralized logging
-- [ ] Distributed tracing
+For a 99.9% monthly availability SLO:
 
-## Incident Management
+```text
+Allowed downtime ≈ 43.2 minutes/month
+```
 
-The project will incorporate SRE-style incident management.
+The error budget provides a framework for balancing:
 
-Planned capabilities:
+```text
+Reliability
+     |
+     +---- Change velocity
+     |
+     +---- Release risk
+     |
+     +---- Operational stability
+```
 
-- Incident severity levels
-- Alert definitions
-- On-call procedures
-- Troubleshooting runbooks
-- Root cause analysis
-- Post-incident reviews
-- Preventive actions
+---
 
-Example incident lifecycle:
+# Incident Management
+
+LedgerOps includes SRE-style incident-management documentation.
+
+Severity levels:
+
+```text
+SEV-1
+Critical transaction functionality or financial data integrity issue.
+
+SEV-2
+Major transaction or fraud-processing degradation.
+
+SEV-3
+Limited degradation with a workaround available.
+```
+
+Incident lifecycle:
 
 ```text
 Alert
@@ -733,45 +1244,579 @@ Postmortem
 Preventive Improvements
 ```
 
-## Security
+Operational documentation is available under:
+
+```text
+sre/
+├── incident-response.md
+├── reliability-testing.md
+└── runbook.md
+```
+
+---
+
+# Reliability Testing
+
+LedgerOps includes controlled reliability testing rather than only functional testing.
+
+## Service Failure Recovery
+
+```text
+Delete Transaction Service Pod
+          |
+          v
+Kubernetes detects replica deficit
+          |
+          v
+Replacement pod created
+          |
+          v
+Readiness restored
+          |
+          v
+Deployment returns to 2/2
+          |
+          v
+Prometheus target remains UP
+```
+
+## Fraud Failure Testing
+
+```text
+Large transaction
+       |
+       v
+Fraud Service
+       |
+       v
+REJECTED
+       |
+       v
+HTTP 403
+       |
+       v
+No transaction record
+       |
+       v
+Balances unchanged
+       |
+       v
+Audit event recorded
+```
+
+These tests demonstrate both application-level and infrastructure-level reliability behavior.
+
+---
+
+# Infrastructure as Code
+
+Terraform is used to define the target GCP infrastructure.
+
+Project structure:
+
+```text
+terraform/
+├── modules/
+│   ├── network/
+│   ├── gke/
+│   ├── artifact-registry/
+│   └── iam/
+│
+└── environments/
+    └── dev/
+```
+
+Terraform modules define infrastructure for:
+
+- VPC
+- Subnetwork
+- GKE cluster
+- GKE node pool
+- Artifact Registry
+- Workload Identity
+- GitHub Actions service account
+- IAM configuration
+
+Terraform has been validated with:
+
+```bash
+terraform init
+terraform validate
+terraform plan
+```
+
+The development plan contains infrastructure resources for the target GCP environment.
+
+Actual GCP infrastructure deployment is currently not performed because the development GCP project does not have active billing.
+
+---
+
+# Workload Identity Federation
+
+The target GCP CI/CD architecture uses GitHub Actions with Workload Identity Federation rather than long-lived service-account keys.
+
+Conceptually:
+
+```text
+GitHub Actions
+      |
+      v
+OIDC Identity Token
+      |
+      v
+Google Workload Identity
+      |
+      v
+Short-lived GCP Credentials
+      |
+      v
+GCP Resources
+```
+
+This avoids storing permanent Google Cloud service-account credentials in GitHub.
+
+---
+
+# Target GCP Architecture
+
+The target cloud deployment architecture is:
+
+```text
+                           GitHub
+                              |
+                              v
+                       GitHub Actions
+                              |
+                              v
+                             GHCR
+                              |
+                              v
+                     Google Cloud Platform
+                              |
+                       Workload Identity
+                              |
+                              v
+                            GKE
+                              |
+          +-------------------+-------------------+
+          |                   |                   |
+          v                   v                   v
+   Account Service     Transaction Service    Fraud Service
+          |                   |                   |
+          +-------------------+-------------------+
+                              |
+                              v
+                         PostgreSQL
+                              |
+                              v
+                   Monitoring / Logging
+```
+
+Planned production improvements include:
+
+- GKE
+- Cloud networking
+- IAM
+- Artifact Registry
+- Secret management
+- Cloud monitoring
+- Cloud logging
+- Autoscaling
+- Production ingress
+- TLS
+- Automated deployment
+
+The infrastructure is currently **Terraform plan-ready**.
+
+---
+
+# Project Structure
+
+```text
+ledgerops/
+│
+├── .github/
+│   └── workflows/
+│       └── ci-cd.yml
+│
+├── services/
+│   ├── account-service/
+│   │   ├── app/
+│   │   │   ├── __init__.py
+│   │   │   ├── database.py
+│   │   │   ├── main.py
+│   │   │   └── models.py
+│   │   ├── tests/
+│   │   │   ├── __init__.py
+│   │   │   └── test_accounts.py
+│   │   ├── requirements.txt
+│   │   └── Dockerfile
+│   │
+│   ├── transaction-service/
+│   │   ├── app/
+│   │   │   ├── __init__.py
+│   │   │   ├── database.py
+│   │   │   ├── main.py
+│   │   │   └── models.py
+│   │   ├── tests/
+│   │   ├── requirements.txt
+│   │   └── Dockerfile
+│   │
+│   └── fraud-service/
+│       ├── app/
+│       │   ├── __init__.py
+│       │   └── main.py
+│       ├── tests/
+│       ├── requirements.txt
+│       └── Dockerfile
+│
+├── k8s/
+│   ├── namespace.yaml
+│   ├── configmap.yaml
+│   ├── secret.yaml
+│   ├── postgres.yaml
+│   ├── account-service.yaml
+│   ├── transaction-service.yaml
+│   ├── fraud-service.yaml
+│   ├── hpa.yaml
+│   ├── pdb.yaml
+│   ├── network-policy.yaml
+│   ├── kustomization.yaml
+│   │
+│   └── observability/
+│       ├── prometheus.yaml
+│       ├── prometheus-rules.yaml
+│       ├── prometheus-config.yaml
+│       │
+│       └── grafana/
+│           ├── grafana.yaml
+│           ├── config.yaml
+│           ├── dashboard-provider.yaml
+│           └── dashboard.json
+│
+├── sre/
+│   ├── incident-response.md
+│   ├── reliability-testing.md
+│   └── runbook.md
+│
+├── terraform/
+│   ├── modules/
+│   │   ├── network/
+│   │   ├── gke/
+│   │   ├── artifact-registry/
+│   │   └── iam/
+│   │
+│   └── environments/
+│       └── dev/
+│           ├── main.tf
+│           ├── variables.tf
+│           ├── outputs.tf
+│           ├── providers.tf
+│           └── terraform.tfvars.example
+│
+├── docker-compose.yml
+├── .gitignore
+└── README.md
+```
+
+---
+
+# Security
 
 Security is incorporated throughout the development lifecycle.
 
-Current practices:
+## Implemented Security Controls
 
 - Environment-based configuration
-- `.env` files excluded from Git
-- Virtual environments excluded from Git
 - Credentials excluded from source control
+- Kubernetes Secrets
+- GitHub Actions OIDC / Workload Identity design
+- Container image vulnerability scanning
+- Trivy security scanning
+- Kubernetes NetworkPolicies
+- Least-privilege-oriented IAM design
+- Immutable container image SHA tags
 
-Planned security capabilities:
+## Additional Production Controls
 
-- [ ] Secret management
-- [ ] IAM least privilege
-- [ ] Container image scanning
-- [ ] Dependency vulnerability scanning
-- [ ] Secure CI/CD credentials
-- [ ] HTTPS/TLS
-- [ ] API authentication
-- [ ] Authorization
-- [ ] Audit logging
+For a production deployment, the following would be added:
 
-## Microservice Design
+- HTTPS/TLS
+- API authentication
+- Authorization
+- External secret management
+- Database encryption
+- Key management
+- Centralized security logging
+- Dependency scanning
+- Runtime security monitoring
+- WAF / ingress protection
 
-LedgerOps uses independently deployable services.
+---
 
-Each service is designed to have:
+# Observability Model
 
-- Independent application code
-- Independent dependencies
-- Independent database models
-- Independent API endpoints
-- Independent tests
-- Independent runtime configuration
+LedgerOps follows the three pillars of observability:
 
-This allows services to be developed, tested, deployed, and scaled independently.
+```text
+                 Observability
+                      |
+          +-----------+-----------+
+          |           |           |
+          v           v           v
+        Logs       Metrics      Traces
+          |           |           |
+          v           v           v
+       Events     Prometheus    Future
+                    |
+                    v
+                 Grafana
+```
 
-## Development Workflow
+Current implementation focuses primarily on:
+
+- Metrics
+- Dashboards
+- Alerts
+- Application logging
+- Health checks
+- Audit events
+
+Distributed tracing is identified as a future production enhancement.
+
+---
+
+# Metrics
+
+Application metrics include:
+
+```text
+ledgerops_http_requests_total
+ledgerops_http_request_duration_seconds
+ledgerops_fraud_checks_total
+```
+
+HTTP metrics track:
+
+- HTTP method
+- API path
+- HTTP status
+- Request count
+- Request latency
+
+Fraud metrics track:
+
+- Approved checks
+- Review decisions
+- Rejected checks
+
+These metrics provide the foundation for SLI calculation and SRE alerting.
+
+---
+
+# SRE Dashboard
+
+The Grafana dashboard provides operational visibility into:
+
+```text
+Transaction Request Rate
+Transaction Success Ratio
+Transaction Error Rate
+Transaction p95 Latency
+Fraud Check Rate
+Fraud Rejection Ratio
+Service Availability
+Active Alerts
+```
+
+This allows an operator to move from:
+
+```text
+User reports problem
+        |
+        v
+Check dashboard
+        |
+        v
+Identify affected service
+        |
+        v
+Inspect metrics
+        |
+        v
+Inspect logs
+        |
+        v
+Follow runbook
+        |
+        v
+Mitigate incident
+```
+
+---
+
+# CI/CD Reliability
+
+The CI/CD pipeline acts as an automated quality gate.
+
+```text
+Code Change
+    |
+    v
+Automated Tests
+    |
+    v
+Container Build
+    |
+    v
+Security Scan
+    |
+    v
+Immutable Image
+    |
+    v
+Container Registry
+    |
+    v
+Deployment
+    |
+    v
+Health Verification
+```
+
+This reduces the risk of deploying untested or vulnerable application artifacts.
+
+---
+
+# Deployment Strategy
+
+Container images are tagged using the Git commit SHA.
+
+Example:
+
+```text
+ledgerops-transaction-service:sha-abc123
+```
+
+This enables:
+
+```text
+Release A
+   |
+   v
+sha-111111
+   |
+   v
+Release B
+   |
+   v
+sha-222222
+```
+
+If Release B introduces a problem, the exact previous image can be identified and redeployed.
+
+This is preferable to relying only on a mutable `latest` tag.
+
+---
+
+# Failure Scenarios
+
+LedgerOps has been designed around common distributed-system failure scenarios.
+
+## Fraud Service Rejection
+
+```text
+Transaction
+    |
+    v
+Fraud Service
+    |
+    v
+REJECTED
+    |
+    +--> HTTP 403
+    +--> No transaction persisted
+    +--> No balance update
+    +--> Audit event recorded
+```
+
+## Transaction Service Pod Failure
+
+```text
+Pod deleted
+    |
+    v
+Kubernetes Deployment
+    |
+    v
+Replacement pod
+    |
+    v
+Readiness check
+    |
+    v
+2/2 replicas restored
+```
+
+## Application Error
+
+```text
+Request
+   |
+   v
+Validation / Processing
+   |
+   v
+Exception
+   |
+   v
+Database rollback
+   |
+   v
+No partial ledger update
+```
+
+---
+
+# Banking / Financial Engineering Concepts
+
+LedgerOps intentionally incorporates concepts relevant to financial systems engineering.
+
+## Transaction Integrity
+
+Financial transfers are performed inside database transactions.
+
+## Idempotency
+
+Retrying the same request does not create duplicate transfers.
+
+## Atomicity
+
+Source and destination balance updates occur within one database transaction.
+
+## Consistency
+
+Validation prevents invalid account, currency, and balance states.
+
+## Auditability
+
+Transaction lifecycle events are persisted for investigation and traceability.
+
+## Fraud Controls
+
+Transactions are evaluated before balances are changed.
+
+## Reversal
+
+Completed transactions can be moved to a reversed state for controlled correction workflows.
+
+## Reliability
+
+The system is designed to tolerate application pod failure and recover automatically through Kubernetes.
+
+---
+
+# Development Workflow
 
 ```text
 1. Develop feature
@@ -801,168 +1846,410 @@ This allows services to be developed, tested, deployed, and scaled independently
 9. Push image to GHCR
         |
         v
-10. Deploy to GCP
+10. Deploy
         |
         v
-11. Health check
+11. Health verification
         |
         v
 12. Monitor
+        |
+        v
+13. Incident response / rollback if required
 ```
-
-## Current Status
-
-### Completed
-
-- [x] Git repository initialized
-- [x] Account Service created
-- [x] Account database model
-- [x] PostgreSQL integration
-- [x] Account creation API
-- [x] Account lookup API
-- [x] Account balance API
-- [x] PostgreSQL Docker container
-- [x] Docker Compose configuration
-- [x] Transaction Service scaffold
-- [x] Transaction database model
-- [x] Transaction PostgreSQL integration
-- [x] Transaction health endpoint
-- [x] Transaction API endpoint
-- [x] Environment-based DATABASE_URL
-- [x] Git version control
-
-### In Progress
-
-- [ ] Transaction creation API
-- [ ] Account-to-account transfers
-- [ ] Transaction validation
-- [ ] Balance updates
-- [ ] Transaction status management
-- [ ] Automated transaction tests
-- [ ] Dockerfiles for application services
-- [ ] GitHub Actions CI/CD
-- [ ] GHCR image publishing
-- [ ] Security scanning
-- [ ] Prometheus metrics
-- [ ] Grafana dashboards
-- [ ] SLO/SLI implementation
-- [ ] Alerting
-- [ ] Incident runbooks
-- [ ] GCP deployment
-- [ ] Infrastructure as Code
-- [ ] Production-grade observability
-
-## Roadmap
-
-### Phase 1 — Core Services
-
-- Complete Account Service
-- Complete Transaction Service
-- Implement transaction creation
-- Implement account-to-account transfers
-- Add validation
-- Add error handling
-- Expand automated tests
-
-### Phase 2 — Containerization
-
-- Create service Dockerfiles
-- Containerize Account Service
-- Containerize Transaction Service
-- Update Docker Compose
-- Implement container health checks
-
-### Phase 3 — CI/CD
-
-- Create GitHub Actions workflows
-- Run automated tests
-- Build Docker images
-- Scan images
-- Push images to GHCR
-- Implement deployment automation
-
-### Phase 4 — SRE
-
-- Implement Prometheus metrics
-- Create Grafana dashboards
-- Define SLIs and SLOs
-- Configure alerts
-- Create incident runbooks
-- Implement structured logging
-- Add failure testing
-
-### Phase 5 — Cloud
-
-- Deploy services to GCP
-- Configure IAM
-- Configure secrets
-- Configure networking
-- Implement Infrastructure as Code
-- Configure monitoring
-- Configure production logging
-- Implement autoscaling
-
-## Key DevOps / SRE Concepts Demonstrated
-
-This project is intended to demonstrate practical experience with:
-
-- Microservices
-- REST APIs
-- Python
-- FastAPI
-- PostgreSQL
-- SQLAlchemy
-- Docker
-- Docker Compose
-- Git
-- GitHub
-- GitHub Actions
-- GHCR
-- CI/CD
-- Cloud deployment
-- Infrastructure as Code
-- Observability
-- Monitoring
-- Logging
-- Metrics
-- SLIs
-- SLOs
-- Error budgets
-- Incident management
-- Reliability engineering
-- Security
-- Automated testing
-
-
-<img width="1710" height="1026" alt="image" src="https://github.com/user-attachments/assets/ab268816-e7e8-4b11-9aa8-941327f1fde2" />
-
-<img width="1710" height="1026" alt="image" src="https://github.com/user-attachments/assets/f0cc2baf-4bd7-4903-a266-ceea8ada1365" />
-
-## Project Goal
-
-The ultimate goal of LedgerOps is to evolve from a locally running microservice application into a production-style financial platform with:
-
-- Containerized microservices
-- Automated CI/CD
-- Secure cloud deployment
-- Highly available infrastructure
-- PostgreSQL persistence
-- Automated testing
-- Monitoring and observability
-- SLO-driven reliability
-- Incident management
-- Infrastructure as Code
-- Security scanning
-- Automated deployment and rollback
 
 ---
 
-## Author
+# Validation Results
+
+The project has been validated across multiple layers.
+
+## Application Testing
+
+```text
+Transaction Service tests: 5 passed
+Fraud Service tests:       4 passed
+```
+
+## CI/CD
+
+The GitHub Actions pipeline successfully completed:
+
+```text
+Transaction Service tests
+Fraud Service tests
+Account Service image build
+Transaction Service image build
+Fraud Service image build
+Trivy scans
+GHCR publishing
+```
+
+## Kubernetes
+
+Verified:
+
+```text
+Account Service:       2/2 replicas
+Transaction Service:   2/2 replicas
+Fraud Service:         2/2 replicas
+PostgreSQL:            Running
+Prometheus:            Running
+Grafana:               Running
+```
+
+## Prometheus
+
+Verified targets:
+
+```text
+transaction-service => UP
+fraud-service        => UP
+prometheus           => UP
+```
+
+## Grafana
+
+Verified:
+
+```text
+Database: OK
+Prometheus datasource: configured
+LedgerOps dashboard: available
+```
+
+## Kubernetes Self-Healing
+
+Verified:
+
+```text
+Pod deletion
+     |
+     v
+Replacement pod created
+     |
+     v
+Pod Ready
+     |
+     v
+Deployment restored to 2/2
+```
+
+## Fraud End-to-End Validation
+
+Verified:
+
+```text
+$6,000 transaction
+        |
+        v
+Fraud rejection
+        |
+        v
+HTTP 403
+        |
+        v
+No transaction record
+        |
+        v
+Balances unchanged
+        |
+        v
+Audit rejection recorded
+```
+
+---
+
+# Current Project Status
+
+## Completed
+
+- [x] Git repository
+- [x] Account Service
+- [x] Transaction Service
+- [x] Fraud Service
+- [x] PostgreSQL integration
+- [x] SQLAlchemy models
+- [x] Account creation
+- [x] Account lookup
+- [x] Balance retrieval
+- [x] Transaction creation
+- [x] Atomic account transfers
+- [x] Database row locking
+- [x] Transaction validation
+- [x] Balance validation
+- [x] Currency validation
+- [x] Idempotency
+- [x] Fraud validation
+- [x] Fraud rejection
+- [x] Transaction audit trail
+- [x] Transaction reversal
+- [x] Dockerfiles
+- [x] Docker Compose
+- [x] GitHub Actions CI/CD
+- [x] Automated testing
+- [x] Docker image builds
+- [x] Trivy security scanning
+- [x] GHCR publishing
+- [x] Immutable SHA image tags
+- [x] Kubernetes deployments
+- [x] Kubernetes Services
+- [x] Kubernetes health probes
+- [x] Kubernetes Secrets
+- [x] Kubernetes ConfigMaps
+- [x] Prometheus
+- [x] Prometheus recording rules
+- [x] Prometheus alert rules
+- [x] Grafana
+- [x] Grafana SRE dashboard
+- [x] HPA configuration
+- [x] PodDisruptionBudgets
+- [x] Kubernetes NetworkPolicies
+- [x] Kubernetes self-healing test
+- [x] SLI/SLO definitions
+- [x] Error budget definition
+- [x] Incident response documentation
+- [x] Reliability testing documentation
+- [x] SRE runbook
+- [x] Terraform modules
+- [x] Terraform validation
+- [x] Terraform plan
+- [x] GCP IAM design
+- [x] Workload Identity Federation design
+
+---
+
+# Current Cloud Limitation
+
+The GCP infrastructure is **Terraform plan-ready**, but the project has not been applied to GCP because the development GCP project currently does not have an active billing account.
+
+Therefore, the project intentionally does **not** claim that the GKE production deployment has been completed.
+
+The demonstrated environment is:
+
+```text
+Local Development
+      |
+      v
+Docker
+      |
+      v
+Docker Compose
+
+and
+
+Docker Desktop Kubernetes
+      |
+      +--> Microservices
+      +--> PostgreSQL
+      +--> Prometheus
+      +--> Grafana
+      +--> HPA
+      +--> PDB
+      +--> NetworkPolicies
+      +--> Self-healing
+```
+
+The Terraform configuration provides the path to the target GCP environment once billing is available.
+
+---
+
+# Roadmap
+
+The core project is complete as a DevOps/SRE portfolio implementation.
+
+Potential future production enhancements include:
+
+- [ ] Deploy Terraform infrastructure to GCP
+- [ ] Deploy workloads to GKE
+- [ ] Configure production ingress
+- [ ] Configure HTTPS/TLS
+- [ ] Configure Cloud Load Balancing
+- [ ] Configure Google Cloud Monitoring
+- [ ] Configure Google Cloud Logging
+- [ ] Add managed PostgreSQL
+- [ ] Add centralized secrets management
+- [ ] Add API authentication
+- [ ] Add authorization / RBAC
+- [ ] Add distributed tracing
+- [ ] Add OpenTelemetry
+- [ ] Add dependency vulnerability scanning
+- [ ] Add load testing
+- [ ] Add chaos testing
+- [ ] Add production-grade backup and disaster recovery
+- [ ] Add multi-environment Terraform configuration
+
+---
+
+# Key DevOps / SRE Concepts Demonstrated
+
+This project demonstrates practical experience with:
+
+### Software Engineering
+
+- Python
+- FastAPI
+- REST APIs
+- SQLAlchemy
+- PostgreSQL
+- Microservices
+- Automated testing
+
+### DevOps
+
+- Git
+- GitHub
+- Docker
+- Docker Compose
+- GitHub Actions
+- CI/CD
+- GHCR
+- Immutable container images
+- Automated security scanning
+
+### Kubernetes
+
+- Deployments
+- Services
+- ConfigMaps
+- Secrets
+- Health probes
+- Replica management
+- HPA
+- PDB
+- NetworkPolicies
+- Self-healing
+
+### Cloud
+
+- Google Cloud Platform
+- GKE
+- Artifact Registry
+- IAM
+- Workload Identity Federation
+- Terraform
+
+### Observability
+
+- Prometheus
+- Grafana
+- Metrics
+- Dashboards
+- Recording rules
+- Alert rules
+- Application logging
+- Health checks
+
+### SRE
+
+- SLIs
+- SLOs
+- Error budgets
+- Alerting
+- Incident response
+- Runbooks
+- Reliability testing
+- Failure recovery
+- Service availability
+- Latency monitoring
+- Error-rate monitoring
+
+### Financial Systems
+
+- Atomic transactions
+- Database locking
+- Idempotency
+- Fraud detection
+- Audit trails
+- Transaction lifecycle
+- Transaction reversal
+- Ledger consistency
+
+---
+
+# Screenshots
+
+## CI/CD Pipeline
+
+<img width="1710" height="1026" alt="LedgerOps CI/CD Pipeline" src="https://github.com/user-attachments/assets/ab268816-e7e8-4b11-9aa8-941327f1fde2" />
+
+## Kubernetes / Observability
+
+<img width="1710" height="1026" alt="LedgerOps Kubernetes and Observability" src="https://github.com/user-attachments/assets/f0cc2baf-4bd7-4903-a266-ceea8da1fde2" />
+
+---
+
+# Project Goal
+
+The goal of LedgerOps is to demonstrate how a financial transaction platform can evolve from application-level services into a production-style operational platform.
+
+The project brings together:
+
+```text
+Financial Transaction Processing
+              +
+        Microservices
+              +
+           Docker
+              +
+        Kubernetes
+              +
+           CI/CD
+              +
+          Security
+              +
+       Observability
+              +
+             SRE
+              +
+      Infrastructure as Code
+              |
+              v
+    Production-Ready Architecture
+```
+
+The emphasis is on building systems that are not only functional, but also:
+
+- Reliable
+- Observable
+- Secure
+- Testable
+- Recoverable
+- Deployable
+- Auditable
+- Operationally maintainable
+
+---
+
+# Repository
+
+GitHub:
+
+https://github.com/spd-778/ledgerops
+
+Branch:
+
+```text
+master
+```
+
+---
+
+# Author
 
 **Prathyusha Danthuluri**
 
-GitHub: https://github.com/spd-778
+GitHub:
 
-## License
+https://github.com/spd-778
+
+---
+
+# License
 
 This project is intended for educational, portfolio, and DevOps/SRE demonstration purposes.
+
+
+<img width="1710" height="1026" alt="image" src="https://github.com/user-attachments/assets/ab268816-e7e8-4b11-9aa8-941327f1fde2" />
+<img width="1710" height="1026" alt="image" src="https://github.com/user-attachments/assets/f0cc2baf-4bd7-4903-a266-ceea8ada1365" />
+
