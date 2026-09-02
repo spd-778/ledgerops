@@ -366,6 +366,47 @@ def get_transaction(
         db.close()
 
 
+
+@app.get("/audit/transactions/{transaction_id}")
+def get_transaction_audit(transaction_id: str):
+    db = SessionLocal()
+    try:
+        transaction = db.query(Transaction).filter(
+            Transaction.transaction_id == transaction_id
+        ).first()
+
+        audit_events = (
+            db.query(AuditEvent)
+            .filter(AuditEvent.transaction_id == transaction_id)
+            .order_by(AuditEvent.created_at.asc(), AuditEvent.id.asc())
+            .all()
+        )
+
+        if not transaction and not audit_events:
+            raise HTTPException(
+                status_code=404,
+                detail="Transaction audit history not found",
+            )
+
+        return {
+            "transaction_id": transaction_id,
+            "transaction_exists": transaction is not None,
+            "transaction_status": transaction.status if transaction else None,
+            "audit_events": [
+                {
+                    "id": event.id,
+                    "event_type": event.event_type,
+                    "event_status": event.event_status,
+                    "actor": event.actor,
+                    "reason": event.reason,
+                    "created_at": event.created_at,
+                }
+                for event in audit_events
+            ],
+        }
+    finally:
+        db.close()
+
 @app.get("/transactions")
 def list_transactions():
     db: Session = SessionLocal()
