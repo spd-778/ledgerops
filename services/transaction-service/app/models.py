@@ -67,3 +67,41 @@ class Transaction(Base):
         DateTime,
         default=datetime.utcnow,
     )
+
+
+class AuditEvent(Base):
+    __tablename__ = "audit_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    transaction_id = Column(
+        String,
+        nullable=False,
+        index=True,
+    )
+
+    event_type = Column(
+        String(50),
+        nullable=False,
+    )
+
+    event_status = Column(
+        String(30),
+        nullable=False,
+    )
+
+    actor = Column(
+        String(100),
+        nullable=False,
+    )
+
+    reason = Column(
+        String(500),
+        nullable=True,
+    )
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False,
+    )

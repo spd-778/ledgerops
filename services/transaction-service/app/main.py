@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal, engine
-from app.models import Account, Base, Transaction
+from app.models import Account, AuditEvent, Base, Transaction
 
 
 Base.metadata.create_all(bind=engine)
@@ -217,6 +217,18 @@ def create_transaction(
         fraud_result = fraud_response.json()
 
         if fraud_result["decision"] == "REJECTED":
+            db.add(
+                AuditEvent(
+                    transaction_id=transaction_id,
+                    event_type="FRAUD_CHECK",
+                    event_status="REJECTED",
+                    actor="fraud-service",
+                    reason=fraud_result["reason"],
+                )
+            )
+
+            db.commit()
+
             raise HTTPException(
                 status_code=403,
                 detail={
@@ -225,6 +237,26 @@ def create_transaction(
                     "reason": fraud_result["reason"],
                 },
             )
+
+        db.add(
+            AuditEvent(
+                transaction_id=transaction_id,
+                event_type="TRANSACTION_CREATED",
+                event_status="PENDING",
+                actor="transaction-service",
+                reason="Transaction request accepted",
+            )
+        )
+
+        db.add(
+            AuditEvent(
+                transaction_id=transaction_id,
+                event_type="FRAUD_CHECK",
+                event_status="APPROVED",
+                actor="fraud-service",
+                reason=fraud_result["reason"],
+            )
+        )
 
         new_transaction = Transaction(
             transaction_id=transaction_id,
@@ -249,6 +281,16 @@ def create_transaction(
         )
 
         new_transaction.status = "COMPLETED"
+
+        db.add(
+            AuditEvent(
+                transaction_id=transaction_id,
+                event_type="TRANSACTION_COMPLETED",
+                event_status="COMPLETED",
+                actor="transaction-service",
+                reason="Ledger balances updated successfully",
+            )
+        )
 
         db.commit()
         db.refresh(new_transaction)
@@ -279,12 +321,14 @@ def create_transaction(
             detail="Transaction could not be created",
         )
 
-    except Exception:
+    except Exception as exc:
         db.rollback()
+
+        print(f"TRANSACTION ERROR: {type(exc).__name__}: {exc}", flush=True)
 
         raise HTTPException(
             status_code=500,
-            detail="Transaction processing failed",
+            detail=f"Transaction processing failed: {type(exc).__name__}: {exc}",
         )
 
     finally:
