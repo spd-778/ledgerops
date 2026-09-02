@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-provider
+  namespace: ledgerops
+data:
+  dashboard.yaml: |
+    apiVersion: 1
+    providers:
+      - name: LedgerOps
+        orgId: 1
+        folder: LedgerOps
+        type: file
+        disableDeletion: true
+        editable: false
+        options:
+          path: /var/lib/grafana/dashboards

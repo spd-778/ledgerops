@@ -1,0 +1,34 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: transaction-service
+  namespace: ledgerops
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: transaction-service
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: fraud-service
+  namespace: ledgerops
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: fraud-service
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: account-service
+  namespace: ledgerops
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: account-service
