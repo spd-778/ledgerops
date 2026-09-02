@@ -1,0 +1,4 @@
+project_id  = "ledgerops"
+region      = "northamerica-northeast1"
+zone        = "northamerica-northeast1-a"
+environment = "dev"

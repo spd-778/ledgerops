@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ledgerops-config
+  namespace: ledgerops
+data:
+  POSTGRES_DB: ledgerops
+  POSTGRES_USER: ledgerops
+  FRAUD_SERVICE_URL: http://fraud-service:8003

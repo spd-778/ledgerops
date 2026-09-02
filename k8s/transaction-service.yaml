@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: transaction-service
+  namespace: ledgerops
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: transaction-service
+  template:
+    metadata:
+      labels:
+        app: transaction-service
+    spec:
+      containers:
+        - name: transaction-service
+          image: ledgerops-transaction-service:latest
+          ports:
+            - containerPort: 8002
+          env:
+            - name: DATABASE_URL
+              value: postgresql+psycopg2://ledgerops:ledgerops_dev_password@postgres:5432/ledgerops
+            - name: FRAUD_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: ledgerops-config
+                  key: FRAUD_SERVICE_URL
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 20
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: transaction-service
+  namespace: ledgerops
+spec:
+  selector:
+    app: transaction-service
+  ports:
+    - port: 8002
+      targetPort: 8002
